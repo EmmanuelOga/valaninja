@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+eval File.read(File.expand_path("../ninja.rb", __FILE__))
+
+conf = Ninja::Config.new do |c|
+  c.base_path = Dir.getwd
+  c.src_glob = "src/**/*.vala"
+  c.out_path = "_obj"
+  c.vala_package_names = %w[gtk+-3.0]
+  c.binary_name = "main"
+end
+
+Ninja::Build.new(conf).configure!($stdout)
