@@ -91,33 +91,38 @@ end
 
 module Ninja
   class Build < Struct.new(:conf)
+    def banner(out, msg)
+      msg.split("\n").each { |part| out << part.strip.chomp << "\n" }
+    end
+
     def configure!(outfile)
       buffer = Buffer.new
 
       buffer.section(:header) do |out|
-        out.puts %q{
-# __     __    _         _   _ _        _       _
-# \ \   / /_ _| | __ _  | \ | (_)_ __  (_) __ _| |
-#  \ \ / / _` | |/ _` | |  \| | | '_ \ | |/ _` | |
-#   \ V / (_| | | (_| |_| |\  | | | | || | (_| |_|
-#    \_/ \__,_|_|\__,_(_)_| \_|_|_| |_|/ |\__,_(_)
-#                                    |__/
-
-      }
         out.puts "# Generated #{Time.now}"
+        banner(out, %q{
+          # __     __    _         _   _ _        _       _
+          # \ \   / /_ _| | __ _  | \ | (_)_ __  (_) __ _| |
+          #  \ \ / / _` | |/ _` | |  \| | | '_ \ | |/ _` | |
+          #   \ V / (_| | | (_| |_| |\  | | | | || | (_| |_|
+          #    \_/ \__,_|_|\__,_(_)_| \_|_|_| |_|/ |\__,_(_)
+          #                                    |__/
+        })
       end
 
       buffer.section(:vapis) do |out|
-        out.puts %q{
-# __     __          _
-# \ \   / /_ _ _ __ (_)___
-#  \ \ / / _` | '_ \| / __|
-#   \ V / (_| | |_) | \__ \
-#    \_/ \__,_| .__/|_|___/
-#             |_|
+        banner(out, %q{
+          # __     __          _
+          # \ \   / /_ _ _ __ (_)___
+          #  \ \ / / _` | '_ \| / __|
+          #   \ V / (_| | |_) | \__ \
+          #    \_/ \__,_| .__/|_|___/
+          #             |_|
+        })
 
-      }
         out.puts "rule fastvapi"
+        out.puts "  description = valac fast vapi generation"
+        out.puts "  restat = true"
         out.puts "  command = valac --fast-vapi=$out $in\n\n"
 
         conf.each_path do |inpath|
@@ -129,20 +134,20 @@ module Ninja
       end
 
       buffer.section(:cfiles) do |out|
-        out.puts %q{
-#         _____ _ _
-#   ___  |  ___(_) | ___  ___
-#  / __| | |_  | | |/ _ \/ __|
-# | (__  |  _| | | |  __/\__ \
-#(_)___| |_|   |_|_|\___||___/
-#
-
-      }
+        banner(out, %q{
+          #         _____ _ _
+          #   ___  |  ___(_) | ___  ___
+          #  / __| | |_  | | |/ _ \/ __|
+          # | (__  |  _| | | |  __/\__ \
+          #(_)___| |_|   |_|_|\___||___/
+          #
+        })
 
         conf.each_path do |inpath|
           outpath = inpath.relative_to_out_path.with_extension("c")
 
           out.puts "rule rule_#{outpath.underscore}"
+          out.puts "  description = valac compilation to .c files"
           out.puts "  command = valac #{conf.vala_package_params} -C $in -d #{conf.out_path} $"
           out.puts "                  #{conf.vapi_params(inpath)}"
           out.puts "\nbuild #{outpath}: rule_#{outpath.underscore} #{inpath} | $"
@@ -152,18 +157,19 @@ module Ninja
       end
 
       buffer.section(:objects) do |out|
-        out.puts %q{
-#          _____ _ _
-#   ___   |  ___(_) | ___  ___
-#  / _ \  | |_  | | |/ _ \/ __|
-# | (_) | |  _| | | |  __/\__ \
-#(_)___/  |_|   |_|_|\___||___/
-#
-
-      }
+        banner(out, %q{
+          #          _____ _ _
+          #   ___   |  ___(_) | ___  ___
+          #  / _ \  | |_  | | |/ _ \/ __|
+          # | (_) | |  _| | | |  __/\__ \
+          #(_)___/  |_|   |_|_|\___||___/
+          #
+        })
 
         out.puts "rule ccobj"
-        out.puts "  command = cc -c #{conf.pkg_config(:cflags)} $in -o $out\n\n"
+        out.puts "  description = cc binary object files"
+        out.puts "  command = cc -MMD -MF $out.d -c #{conf.pkg_config(:cflags)} $in -o $out"
+        out.puts "  depfile = $out.d\n\n"
 
         conf.each_path do |inpath|
           outpath = inpath.relative_to_out_path.with_extension("o")
@@ -173,16 +179,17 @@ module Ninja
       end
 
       buffer.section(:binary) do |out|
-        out.puts %q{
-#  _     _       _            _   ____  _
-# | |   (_)_ __ | | _____  __| | | __ )(_)_ __   __ _ _ __ _   _
-# | |   | | '_ \| |/ / _ \/ _` | |  _ \| | '_ \ / _` | '__| | | |
-# | |___| | | | |   <  __/ (_| | | |_) | | | | | (_| | |  | |_| |
-# |_____|_|_| |_|_|\_\___|\__,_| |____/|_|_| |_|\__,_|_|   \__, |
-#                                                          |___/
-      }
+        banner(out, %q{
+          #  _     _       _            _   ____  _
+          # | |   (_)_ __ | | _____  __| | | __ )(_)_ __   __ _ _ __ _   _
+          # | |   | | '_ \| |/ / _ \/ _` | |  _ \| | '_ \ / _` | '__| | | |
+          # | |___| | | | |   <  __/ (_| | | |_) | | | | | (_| | |  | |_| |
+          # |_____|_|_| |_|_|\_\___|\__,_| |____/|_|_| |_|\__,_|_|   \__, |
+          #                                                          |___/
+        })
 
         out.puts "rule ccbin"
+        out.puts "  description = cc main binary executable"
         out.puts "  command = cc #{conf.pkg_config(:libs)} $in -o $out\n\n"
         out.puts "build #{conf.binary_name}: ccbin #{conf.objects.join(" ")} | #{conf.objects.join(" ")}"
       end
