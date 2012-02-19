@@ -29,7 +29,7 @@ module Ninja
     end
 
     def vapi_params(inpath)
-      vapi_paths.reject { |k, v| k == inpath }.map { |_, path| "--use-fast-vapi=#{path}" }.join(" $\n#{' '*18}")
+      vapi_paths.reject { |k, v| k == inpath }.map { |_, path| "--use-fast-vapi=#{path}" }
     end
 
     def pkg_config(what)
@@ -57,17 +57,6 @@ module Ninja
     def with_extension(new_ext)
       basepath, name = pn.split
       np pn(basepath).join("#{File.basename(name, File.extname(name))}.#{new_ext}")
-    end
-
-    def underscore
-      word = path.to_s
-      word.gsub!(/[\/.]/, "_")
-      word.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
-      word.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
-      word.tr!("-", "_")
-      word.downcase!
-      word.squeeze!("_")
-      word
     end
 
     def to_s
@@ -121,9 +110,9 @@ module Ninja
         })
 
         out.puts "rule fastvapi"
-        out.puts "  description = valac fast vapi generation"
-        out.puts "  restat = true"
-        out.puts "  command = valac --fast-vapi=$out $in\n\n"
+        out.puts "    description = valac fast vapi generation"
+        out.puts "    restat = true"
+        out.puts "    command = valac --fast-vapi=$out $in\n\n"
 
         conf.each_path do |inpath|
           outpath = inpath.relative_to_out_path.with_extension("vapi")
@@ -143,17 +132,20 @@ module Ninja
           #
         })
 
+        out.puts "rule vala_to_c"
+        out.puts "    description = valac compilation to .c files"
+        out.puts "    restat = true"
+        out.puts "    command = valac #{conf.vala_package_params} -C $in -d #{conf.out_path} $vapis"
+
         conf.each_path do |inpath|
           outpath = inpath.relative_to_out_path.with_extension("c")
 
-          out.puts "rule rule_#{outpath.underscore}"
-          out.puts "  description = valac compilation to .c files"
-          out.puts "  restat = true"
-          out.puts "  command = valac #{conf.vala_package_params} -C $in -d #{conf.out_path} $"
-          out.puts "                  #{conf.vapi_params(inpath)}"
-          out.puts "\nbuild #{outpath}: rule_#{outpath.underscore} #{inpath} | $"
-          out.puts "#{' '*18}#{conf.vapi_paths.values.join(" $\n#{' '*18}").strip}"
-          out.puts "# ---\n\n"
+          prefix = "build #{outpath}: vala_to_c "
+          out.puts "\n#{prefix}#{inpath} | $"
+          out.puts "#{' '*prefix.length}#{conf.vapi_paths.values.join(" $\n#{' '*prefix.length}").strip}"
+
+          out.puts "    vapis = #{conf.vapi_params(inpath).join(" $\n#{' '*12}")}"
+          out.puts
         end
       end
 
@@ -168,9 +160,9 @@ module Ninja
         })
 
         out.puts "rule ccobj"
-        out.puts "  description = cc binary object files"
-        out.puts "  command = cc -MMD -MF $out.d -c #{conf.pkg_config(:cflags)} $in -o $out"
-        out.puts "  depfile = $out.d\n\n"
+        out.puts "    description = cc binary object files"
+        out.puts "    command = cc -MMD -MF $out.d -c #{conf.pkg_config(:cflags)} $in -o $out"
+        out.puts "    depfile = $out.d\n\n"
 
         conf.each_path do |inpath|
           outpath = inpath.relative_to_out_path.with_extension("o")
@@ -190,8 +182,9 @@ module Ninja
         })
 
         out.puts "rule ccbin"
-        out.puts "  description = cc main binary executable"
-        out.puts "  command = cc #{conf.pkg_config(:libs)} $in -o $out\n\n"
+        out.puts "    description = cc main binary executable"
+        out.puts "    command = cc #{conf.pkg_config(:libs)} $in -o $out\n\n"
+
         out.puts "build #{conf.binary_name}: ccbin #{conf.objects.join(" ")} | #{conf.objects.join(" ")}"
       end
 

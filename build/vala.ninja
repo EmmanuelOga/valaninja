@@ -1,4 +1,4 @@
-# Generated 2012-02-18 21:36:48 -0300
+# Generated 2012-02-19 19:43:51 -0300
 
 # __     __    _         _   _ _        _       _
 # \ \   / /_ _| | __ _  | \ | (_)_ __  (_) __ _| |
@@ -16,11 +16,12 @@
 #             |_|
 
 rule fastvapi
-  description = valac fast vapi generation
-  restat = true
-  command = valac --fast-vapi=$out $in
+    description = valac fast vapi generation
+    restat = true
+    command = valac --fast-vapi=$out $in
 
 build _obj/src/main.vapi: fastvapi src/main.vala
+build _obj/src/windows/sync_sample_2.vapi: fastvapi src/windows/sync_sample_2.vala
 build _obj/src/windows/sync_sample_1.vapi: fastvapi src/windows/sync_sample_1.vala
 
 #         _____ _ _
@@ -30,27 +31,33 @@ build _obj/src/windows/sync_sample_1.vapi: fastvapi src/windows/sync_sample_1.va
 #(_)___| |_|   |_|_|\___||___/
 #
 
-rule rule__obj_src_main_c
-  description = valac compilation to .c files
-  restat = true
-  command = valac --pkg gtk+-3.0 -C $in -d _obj $
-                  --use-fast-vapi=_obj/src/windows/sync_sample_1.vapi
+rule vala_to_c
+    description = valac compilation to .c files
+    restat = true
+    command = valac --pkg gtk+-3.0 -C $in -d _obj $vapis
 
-build _obj/src/main.c: rule__obj_src_main_c src/main.vala | $
-                  _obj/src/main.vapi $
-                  _obj/src/windows/sync_sample_1.vapi
-# ---
+build _obj/src/main.c: vala_to_c src/main.vala | $
+                                 _obj/src/main.vapi $
+                                 _obj/src/windows/sync_sample_2.vapi $
+                                 _obj/src/windows/sync_sample_1.vapi
+    vapis = --use-fast-vapi=_obj/src/windows/sync_sample_2.vapi $
+            --use-fast-vapi=_obj/src/windows/sync_sample_1.vapi
 
-rule rule__obj_src_windows_sync_sample_1_c
-  description = valac compilation to .c files
-  restat = true
-  command = valac --pkg gtk+-3.0 -C $in -d _obj $
-                  --use-fast-vapi=_obj/src/main.vapi
 
-build _obj/src/windows/sync_sample_1.c: rule__obj_src_windows_sync_sample_1_c src/windows/sync_sample_1.vala | $
-                  _obj/src/main.vapi $
-                  _obj/src/windows/sync_sample_1.vapi
-# ---
+build _obj/src/windows/sync_sample_2.c: vala_to_c src/windows/sync_sample_2.vala | $
+                                                  _obj/src/main.vapi $
+                                                  _obj/src/windows/sync_sample_2.vapi $
+                                                  _obj/src/windows/sync_sample_1.vapi
+    vapis = --use-fast-vapi=_obj/src/main.vapi $
+            --use-fast-vapi=_obj/src/windows/sync_sample_1.vapi
+
+
+build _obj/src/windows/sync_sample_1.c: vala_to_c src/windows/sync_sample_1.vala | $
+                                                  _obj/src/main.vapi $
+                                                  _obj/src/windows/sync_sample_2.vapi $
+                                                  _obj/src/windows/sync_sample_1.vapi
+    vapis = --use-fast-vapi=_obj/src/main.vapi $
+            --use-fast-vapi=_obj/src/windows/sync_sample_2.vapi
 
 
 #          _____ _ _
@@ -61,11 +68,12 @@ build _obj/src/windows/sync_sample_1.c: rule__obj_src_windows_sync_sample_1_c sr
 #
 
 rule ccobj
-  description = cc binary object files
-  command = cc -MMD -MF $out.d -c -DGSEAL_ENABLE -pthread -I/usr/include/gtk-3.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15   $in -o $out
-  depfile = $out.d
+    description = cc binary object files
+    command = cc -MMD -MF $out.d -c -DGSEAL_ENABLE -pthread -I/usr/include/gtk-3.0 -I/usr/include/atk-1.0 -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/pango-1.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng15   $in -o $out
+    depfile = $out.d
 
 build _obj/src/main.o: ccobj _obj/src/main.c
+build _obj/src/windows/sync_sample_2.o: ccobj _obj/src/windows/sync_sample_2.c
 build _obj/src/windows/sync_sample_1.o: ccobj _obj/src/windows/sync_sample_1.c
 
 #  _     _       _            _   ____  _
@@ -76,7 +84,7 @@ build _obj/src/windows/sync_sample_1.o: ccobj _obj/src/windows/sync_sample_1.c
 #                                                          |___/
 
 rule ccbin
-  description = cc main binary executable
-  command = cc -pthread -lgtk-3 -lgdk-3 -latk-1.0 -lgio-2.0 -lpangoft2-1.0 -lpangocairo-1.0 -lgdk_pixbuf-2.0 -lcairo-gobject -lcairo -lpango-1.0 -lfreetype -lfontconfig -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lrt -lglib-2.0   $in -o $out
+    description = cc main binary executable
+    command = cc -pthread -lgtk-3 -lgdk-3 -latk-1.0 -lgio-2.0 -lpangoft2-1.0 -lpangocairo-1.0 -lgdk_pixbuf-2.0 -lcairo-gobject -lcairo -lpango-1.0 -lfreetype -lfontconfig -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lrt -lglib-2.0   $in -o $out
 
-build _obj/main: ccbin _obj/src/main.o _obj/src/windows/sync_sample_1.o | _obj/src/main.o _obj/src/windows/sync_sample_1.o
+build _obj/main: ccbin _obj/src/main.o _obj/src/windows/sync_sample_2.o _obj/src/windows/sync_sample_1.o | _obj/src/main.o _obj/src/windows/sync_sample_2.o _obj/src/windows/sync_sample_1.o
