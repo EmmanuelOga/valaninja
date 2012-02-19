@@ -148,6 +148,7 @@ module Ninja
 
           out.puts "rule rule_#{outpath.underscore}"
           out.puts "  description = valac compilation to .c files"
+          out.puts "  restat = true"
           out.puts "  command = valac #{conf.vala_package_params} -C $in -d #{conf.out_path} $"
           out.puts "                  #{conf.vapi_params(inpath)}"
           out.puts "\nbuild #{outpath}: rule_#{outpath.underscore} #{inpath} | $"
