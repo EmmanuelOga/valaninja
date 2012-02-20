@@ -16,10 +16,22 @@ You need ruby to rebuild the vala.build configuration file:
 
 but an already generated build/vala.ninja is included for convenience.
 
-To actually build the project, you need to run:
+To generate the vala build file, you need to run:
 
 ```sh
-  ninja
+ninja
+```
+
+To actually build the vala project, you need to:
+
+```sh
+ninja -f build/vala.ninja
+```
+Or in a single line:
+
+```sh
+alias build='ninja > dev/null; ninja -f build/vala.ninja'
+build
 ```
 
 The output should be located on a separate directory, \_obj/.

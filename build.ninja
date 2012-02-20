@@ -1,1 +1,17 @@
-subninja build/vala.ninja
+rule timestamp
+  description = Generating timestap of the last run.
+  command = touch build/TIMESTAMP
+
+rule manifest
+  restat = true
+  description = Generating manifest of source files
+  command = build/manifest
+
+rule vala_ninja
+  restat = true
+  description = Running vala build
+  command = build/configure > build/vala.ninja
+
+build build/TIMESTAMP:  timestamp
+build build/MANIFEST:   manifest   | build/TIMESTAMP
+build build/vala.ninja: vala_ninja | build/MANIFEST

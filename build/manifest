@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+M_PATH = "build/MANIFEST"
+
+current = Dir["src/**/*.vala"].sort.join("\n")
+existing = File.read(M_PATH) if File.file?(M_PATH)
+
+File.open(M_PATH, "w+") { |f| f << current } unless current == existing
+
+`rm build/TIMESTAMP`
